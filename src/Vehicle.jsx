@@ -26,11 +26,12 @@ function startPose(circuit, lane) {
   const yaw = Math.atan2(-dx, -dz);
   // Grid spacing 2.9 (trucks are ~1.8 wide) so they don't spawn touching —
   // touching at GO = start-line pileup that flips the player before driving.
-  // Spawn y = rest height (chassis center ~0.85 above track). Spawning higher
-  // makes the raycast vehicle's suspension initialize fully extended in mid-air
-  // and violently "snap" on first contact — flipping every truck in place.
+  // Spawn y = 0.5: wheels sit slightly INTO the track so suspension is already
+  // compressed at rest. Spawning higher lets the raycast vehicle's suspension
+  // initialize fully extended and violently "snap" on first contact — flipping
+  // every truck in place at GO.
   return {
-    position: [a[0] + (-dz / len) * lane * 2.9, a[1] + 0.85, a[2] + (dx / len) * lane * 2.9],
+    position: [a[0] + (-dz / len) * lane * 2.9, a[1] + 0.5, a[2] + (dx / len) * lane * 2.9],
     rotation: [0, yaw, 0],
   };
 }
@@ -44,6 +45,7 @@ export default function Vehicle({ id, circuit, lane = 0, color = COLORS.player, 
   const boostEnergy = useRef(1);
   const flipWait = useRef(0);
   const flipCooldown = useRef(0);
+  const settleTime = useRef(0);
   const airTime = useRef(0);
   const airPaid = useRef(false);
   const pose = useMemo(() => startPose(circuit, lane), [circuit, lane]);
@@ -106,6 +108,18 @@ export default function Vehicle({ id, circuit, lane = 0, color = COLORS.player, 
   useFrame((_, dt) => {
     const rb = body.current;
     if (!rb) return;
+    // Settle phase: for the first 1.5s after spawn, zero the truck's velocity
+    // every frame so the spawn drop / suspension initialization can't bounce
+    // or flip it before the race starts. Then release normally.
+    settleTime.current += dt;
+    if (settleTime.current < 1.5) {
+      const v = rb.linvel();
+      if (Math.abs(v.y) > 0.1 || Math.abs(v.x) > 0.5 || Math.abs(v.z) > 0.5) {
+        rb.setLinvel({ x: v.x * 0.1, y: 0, z: v.z * 0.1 }, true);
+        const a = rb.angvel();
+        rb.setAngvel({ x: a.x * 0.2, y: a.y * 0.2, z: a.z * 0.2 }, true);
+      }
+    }
     const p = rb.translation();
     const rot = rb.rotation();
     const q = new THREE.Quaternion(rot.x, rot.y, rot.z, rot.w);
