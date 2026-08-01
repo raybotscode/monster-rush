@@ -24,8 +24,13 @@ function startPose(circuit, lane) {
   const dz = b[2] - a[2];
   const len = Math.hypot(dx, dz) || 1;
   const yaw = Math.atan2(-dx, -dz);
+  // Grid spacing 2.9 (trucks are ~1.8 wide) so they don't spawn touching —
+  // touching at GO = start-line pileup that flips the player before driving.
+  // Spawn y = rest height (chassis center ~0.85 above track). Spawning higher
+  // makes the raycast vehicle's suspension initialize fully extended in mid-air
+  // and violently "snap" on first contact — flipping every truck in place.
   return {
-    position: [a[0] + (-dz / len) * lane * 1.85, a[1] + 1.25, a[2] + (dx / len) * lane * 1.85],
+    position: [a[0] + (-dz / len) * lane * 2.9, a[1] + 0.85, a[2] + (dx / len) * lane * 2.9],
     rotation: [0, yaw, 0],
   };
 }
@@ -121,13 +126,24 @@ export default function Vehicle({ id, circuit, lane = 0, color = COLORS.player, 
     if (ctrl) {
       ctrl.setWheelSteering?.(0, steerNow.current);
       ctrl.setWheelSteering?.(1, steerNow.current);
+      // Anti-wheelie: cut front-wheel drive when the nose pitches up hard.
+      // Nose-up = forward vector gains +y (rotation around x-axis).
+      const noseUp = fwd.y > 0.1 && truckUp.y > 0.2;
       [0, 1, 2, 3].forEach((i) => {
-        ctrl.setWheelEngineForce?.(i, i > 1 ? engine : engine * 0.3);
+        ctrl.setWheelEngineForce?.(i, i > 1 ? engine : engine * (noseUp ? 0.05 : 0.3));
         ctrl.setWheelBrake?.(i, brake);
       });
       ctrl.updateVehicle?.(dt);
-    }
-    if (!ctrl || engine !== 0) {
+      // Mild forward assist ONLY when airborne so jumps keep momentum.
+      // Never add raw torque on top of wheel steering — it fights the
+      // suspension and makes the truck spin out (the "chaos" bug).
+      const p = rb.translation();
+      const groundY = circuit.waypoints[state.checkpoint % circuit.waypoints.length][1];
+      if (p.y > groundY + 0.8 && engine !== 0) {
+        rb.applyImpulse({ x: fwd.x * engine * dt * 0.22, y: 0, z: fwd.z * engine * dt * 0.22 }, true);
+      }
+    } else if (engine !== 0) {
+      // No vehicle controller (fallback): raw impulses so the truck still moves.
       rb.applyImpulse({ x: fwd.x * engine * dt * 0.38, y: 0, z: fwd.z * engine * dt * 0.38 }, true);
       rb.applyTorqueImpulse({ x: 0, y: -steerNow.current * speed * dt * 0.35, z: 0 }, true);
     }
@@ -137,7 +153,7 @@ export default function Vehicle({ id, circuit, lane = 0, color = COLORS.player, 
     if (racing && input.boost && boostEnergy.current >= 1) {
       boostEnergy.current = 0;
       boostTimer.current = PHYSICS.boostDuration;
-      rb.applyImpulse({ x: fwd.x * PHYSICS.boostImpulse, y: 1.4, z: fwd.z * PHYSICS.boostImpulse }, true);
+      rb.applyImpulse({ x: fwd.x * PHYSICS.boostImpulse, y: PHYSICS.boostUp, z: fwd.z * PHYSICS.boostImpulse }, true);
       if (!ai) audio.blip("boost");
     }
     if (boostTimer.current > 0) rb.applyImpulse({ x: fwd.x * 18 * dt, y: 0, z: fwd.z * 18 * dt }, true);
@@ -151,7 +167,7 @@ export default function Vehicle({ id, circuit, lane = 0, color = COLORS.player, 
     }
     if (!airborne) airPaid.current = false;
 
-    if (p.y < -18) {
+    if (p.y < -8) {
       const cp = circuit.waypoints[Math.max(0, state.checkpoint - 1) % circuit.waypoints.length];
       rb.setTranslation({ x: cp[0], y: cp[1] + 2, z: cp[2] }, true);
       rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -186,7 +202,7 @@ export default function Vehicle({ id, circuit, lane = 0, color = COLORS.player, 
     const prev = circuit.waypoints[(checkpoint - 1 + circuit.waypoints.length) % circuit.waypoints.length];
     const segLen = Math.hypot(next[0] - prev[0], next[2] - prev[2]) || 1;
     const frac = THREE.MathUtils.clamp(1 - Math.hypot(p.x - next[0], p.z - next[2]) / segLen, 0, 0.99);
-    updateProgress(id, { lap, checkpoint, finished, time: finished ? state.time || useGame.getState().raceTime : 0, progress: lap * circuit.waypoints.length + checkpoint + frac });
+    updateProgress(id, { lap, checkpoint, finished, raceTime: useGame.getState().raceTime, time: finished ? state.time || useGame.getState().raceTime : 0, progress: lap * circuit.waypoints.length + checkpoint + frac });
     if (!ai) {
       setTelemetry({ speed: Math.round(speed * 5.2), boost: boostEnergy.current, airborne, flipReady: canFlip });
       audio.setMuted(muted);

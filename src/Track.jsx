@@ -32,16 +32,19 @@ function TrackSegment({ data, circuit }) {
   return (
     <RigidBody type="fixed" colliders={false} position={data.pos} rotation={[pitch, data.yaw, 0]}>
       <CuboidCollider args={[5.4, 0.22, data.len / 2]} friction={0.88} restitution={0.05} />
+      {/* Guard rails — colliders so trucks bounce back instead of flying off */}
+      <CuboidCollider args={[0.32, 0.9, data.len / 2]} position={[-5.75, 0.85, 0]} friction={0.55} restitution={0.3} />
+      <CuboidCollider args={[0.32, 0.9, data.len / 2]} position={[5.75, 0.85, 0]} friction={0.55} restitution={0.3} />
       <mesh receiveShadow>
         <boxGeometry args={[10.8, 0.44, data.len]} />
         <meshStandardMaterial color={isRamp ? circuit.accent : circuit.color} roughness={0.82} />
       </mesh>
-      <mesh position={[-5.75, 0.44, 0]}>
-        <boxGeometry args={[0.28, 0.85, data.len]} />
+      <mesh position={[-5.75, 0.7, 0]}>
+        <boxGeometry args={[0.62, 1.4, data.len]} />
         <meshStandardMaterial color="#2c2924" roughness={0.7} />
       </mesh>
-      <mesh position={[5.75, 0.44, 0]}>
-        <boxGeometry args={[0.28, 0.85, data.len]} />
+      <mesh position={[5.75, 0.7, 0]}>
+        <boxGeometry args={[0.62, 1.4, data.len]} />
         <meshStandardMaterial color="#2c2924" roughness={0.7} />
       </mesh>
       {isRamp && (
@@ -68,7 +71,7 @@ function BoostPad({ pad, circuit, index }) {
       if (!p) return;
       const d = Math.hypot(p[0] - pos[0], p[2] - pos[2]);
       if (d < 3.4 && truck.body) {
-        truck.body.applyImpulse({ x: truck.forward[0] * PHYSICS.boostImpulse * 0.85, y: 1.1, z: truck.forward[2] * PHYSICS.boostImpulse * 0.85 }, true);
+        truck.body.applyImpulse({ x: truck.forward[0] * PHYSICS.boostImpulse * 0.85, y: 0.5, z: truck.forward[2] * PHYSICS.boostImpulse * 0.85 }, true);
         boostPadHits.set(key, GAME.boostPadRecharge);
         if (id === "player") audio.blip("boost");
       }
