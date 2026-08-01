@@ -26,12 +26,13 @@ function startPose(circuit, lane) {
   const yaw = Math.atan2(-dx, -dz);
   // Grid spacing 2.9 (trucks are ~1.8 wide) so they don't spawn touching —
   // touching at GO = start-line pileup that flips the player before driving.
-  // Spawn y = 0.5: wheels sit slightly INTO the track so suspension is already
-  // compressed at rest. Spawning higher lets the raycast vehicle's suspension
-  // initialize fully extended and violently "snap" on first contact — flipping
-  // every truck in place at GO.
+  // Spawn y = 0.88 EXACTLY: wheel bottom = chassis_y - wheel_offset(0.42) -
+  // wheel_radius(0.42) = chassis_y - 0.84. Track surface is at 0.04, so 0.88
+  // puts wheel bottoms ON the surface (0.04) — no drop, no suspension snap,
+  // and the wheels have traction from frame one. Too high (1.25) = snap-flip
+  // at GO; too low (0.5) = wheels buried, zero traction, truck can't move.
   return {
-    position: [a[0] + (-dz / len) * lane * 2.9, a[1] + 0.5, a[2] + (dx / len) * lane * 2.9],
+    position: [a[0] + (-dz / len) * lane * 2.9, a[1] + 0.88, a[2] + (dx / len) * lane * 2.9],
     rotation: [0, yaw, 0],
   };
 }
@@ -148,9 +149,14 @@ export default function Vehicle({ id, circuit, lane = 0, color = COLORS.player, 
         ctrl.setWheelBrake?.(i, brake);
       });
       ctrl.updateVehicle?.(dt);
+      // Forward assist: the raycast wheels alone don't generate enough
+      // traction in some setups — apply a modest forward impulse alongside
+      // the wheel forces so the truck actually accelerates. NO torque here:
+      // torque on top of wheel steering is what caused the spin-out chaos.
+      if (engine !== 0 && !noseUp) {
+        rb.applyImpulse({ x: fwd.x * engine * dt * 0.16, y: 0, z: fwd.z * engine * dt * 0.16 }, true);
+      }
       // Mild forward assist ONLY when airborne so jumps keep momentum.
-      // Never add raw torque on top of wheel steering — it fights the
-      // suspension and makes the truck spin out (the "chaos" bug).
       const p = rb.translation();
       const groundY = circuit.waypoints[state.checkpoint % circuit.waypoints.length][1];
       if (p.y > groundY + 0.8 && engine !== 0) {

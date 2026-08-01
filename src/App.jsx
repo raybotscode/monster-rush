@@ -10,6 +10,8 @@ import CameraRig from "./CameraRig.jsx";
 import Particles from "./Particles.jsx";
 import HUD from "./HUD.jsx";
 import { resetRuntime } from "./raceRuntime";
+import { truckState } from "./raceRuntime";
+window.__mrDebug = { truckState, getState: () => useGame.getState() };
 
 function RaceTicker() {
   const tickCountdown = useGame((s) => s.tickCountdown);
@@ -37,7 +39,7 @@ function RaceScene() {
         <ambientLight intensity={1.25} />
         <directionalLight position={[10, 18, 8]} intensity={1.65} />
         <Suspense fallback={null}>
-          <Physics gravity={PHYSICS.gravity} timeStep={1 / 60} maxStabilizationIterations={8}>
+          <Physics gravity={PHYSICS.gravity} timeStep="vary">
             <Track circuit={circuit} />
             <Vehicle id="player" circuit={circuit} lane={-1.5} color={COLORS.player} />
             <Vehicle id="ai0" circuit={circuit} lane={-0.5} color={COLORS.ai[0]} ai />
