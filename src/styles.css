@@ -1,0 +1,62 @@
+* { box-sizing: border-box; }
+html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #12110f; color: #f7f2df; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; touch-action: none; user-select: none; }
+button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action: none; }
+canvas { display: block; }
+.screen { min-height: 100%; width: 100%; display: grid; place-items: center; padding: 24px; position: relative; background: #151514; }
+.title { background: linear-gradient(180deg, rgba(25,23,19,.3), rgba(12,12,11,.96)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 600'%3E%3Crect width='900' height='600' fill='%2324211b'/%3E%3Cpath d='M-70 470 C150 370 280 540 480 430 S780 345 990 450' fill='none' stroke='%23a86632' stroke-width='74' stroke-linecap='round'/%3E%3Cpath d='M-60 502 C155 407 280 574 490 464 S788 380 1000 486' fill='none' stroke='%23513f2e' stroke-width='28' stroke-linecap='round'/%3E%3C/svg%3E") center/cover; }
+.trackWash { position: absolute; inset: auto 0 0; height: 24vh; background: linear-gradient(0deg, #12110f, transparent); pointer-events: none; }
+.screen section { width: min(620px, 100%); }
+.eyebrow { margin: 0 0 8px; color: #f3ca40; text-transform: uppercase; font-weight: 900; letter-spacing: 0; }
+h1, h2 { margin: 0; line-height: .9; letter-spacing: 0; }
+h1 { font-size: clamp(54px, 12vw, 132px); max-width: 9ch; text-shadow: 0 8px 0 #000; }
+h2 { font-size: clamp(42px, 8vw, 84px); }
+.copy { max-width: 44ch; color: #ddd4bd; font-size: 18px; line-height: 1.45; }
+.primary, .secondary { min-height: 54px; padding: 0 22px; border-radius: 8px; font-weight: 1000; background: #f3ca40; color: #15110a; box-shadow: 0 5px 0 #8c5d1a; }
+.secondary { background: #34332f; color: #f7f2df; box-shadow: 0 5px 0 #111; }
+.select { align-content: center; }
+.select header { width: min(1040px, 100%); display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.select header p { margin: 0; color: #cfc7b2; font-weight: 800; }
+.circuitGrid { width: min(1040px, 100%); display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.circuit { min-height: 230px; border-radius: 8px; background: #23221f; border: 1px solid rgba(255,255,255,.1); padding: 16px; text-align: left; display: flex; flex-direction: column; gap: 10px; justify-content: flex-start; }
+.circuit:disabled { opacity: .42; cursor: not-allowed; filter: grayscale(.6); }
+.swatch { width: 100%; height: 64px; border-radius: 6px; border: 1px solid rgba(255,255,255,.18); }
+.circuit strong { font-size: 20px; }
+.circuit small { color: #c9c0aa; line-height: 1.35; min-height: 54px; }
+.stars { margin-top: auto; color: #f3ca40; font-weight: 1000; }
+.hud { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
+.hudTop { position: absolute; top: max(12px, env(safe-area-inset-top)); min-width: 112px; padding: 10px 12px; background: rgba(15,14,12,.68); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; backdrop-filter: blur(8px); }
+.hudTop.left { left: max(12px, env(safe-area-inset-left)); }
+.hudTop.right { right: max(12px, env(safe-area-inset-right)); text-align: right; }
+.hudTop strong { display: block; font-size: 24px; line-height: 1; }
+.hudTop span { font-size: 12px; color: #d8ceb6; font-weight: 900; }
+.boostMeter { width: 96px; height: 8px; margin-top: 8px; border-radius: 99px; background: rgba(255,255,255,.16); overflow: hidden; }
+.boostMeter i { display: block; height: 100%; background: linear-gradient(90deg, #35e4ff, #ffde59); }
+.mute { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); pointer-events: auto; background: rgba(15,14,12,.55); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 9px 12px; font-size: 12px; font-weight: 1000; }
+.countdown { position: absolute; top: 27%; left: 50%; transform: translate(-50%, -50%); font-size: clamp(72px, 18vw, 160px); font-weight: 1000; text-shadow: 0 8px 0 #000; }
+.finalLap, .airBadge, .scoreReadout { position: absolute; left: 50%; transform: translateX(-50%); padding: 8px 12px; border-radius: 8px; background: rgba(243,202,64,.88); color: #17130a; font-weight: 1000; }
+.finalLap { top: 18%; }
+.airBadge { top: 42%; background: rgba(53,228,255,.82); }
+.scoreReadout { bottom: max(18px, env(safe-area-inset-bottom)); font-size: 12px; background: rgba(15,14,12,.65); color: #f7f2df; }
+.scorePopup { position: absolute; left: 50%; top: 36%; transform: translateX(-50%); color: #fff4a0; font-size: 30px; font-weight: 1000; text-shadow: 0 4px 0 #000; animation: pop 1.2s ease-out forwards; }
+@keyframes pop { to { opacity: 0; transform: translate(-50%, -80px); } }
+.controls { position: absolute; bottom: max(24px, env(safe-area-inset-bottom)); display: flex; gap: 12px; pointer-events: auto; align-items: flex-end; }
+.leftPad { left: max(16px, env(safe-area-inset-left)); }
+.rightPad { right: max(16px, env(safe-area-inset-right)); }
+.controls button { min-width: 74px; height: 74px; border-radius: 8px; background: rgba(22,21,19,.72); border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(8px); font-weight: 1000; font-size: 18px; box-shadow: 0 5px 0 rgba(0,0,0,.55); }
+.leftPad button { min-width: 82px; font-size: 44px; line-height: 1; }
+.controls .gas { background: rgba(67, 186, 97, .82); }
+.controls .brake { background: rgba(218, 65, 58, .78); }
+.controls .boost { background: rgba(40, 191, 226, .82); }
+.controls .flip { background: rgba(243, 202, 64, .9); color: #18130a; }
+.results, .victory { background: #171614; text-align: center; }
+.bigStars { color: #f3ca40; font-size: 46px; letter-spacing: 0; margin: 14px 0; }
+.row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+@media (max-width: 760px) {
+  .circuitGrid { grid-template-columns: 1fr 1fr; }
+  .circuit { min-height: 185px; }
+  .controls { gap: 8px; }
+  .controls button { min-width: 62px; height: 62px; font-size: 13px; }
+  .leftPad button { min-width: 68px; font-size: 38px; }
+  .rightPad { flex-wrap: wrap; width: 144px; justify-content: flex-end; }
+  .mute { top: 66px; }
+}
