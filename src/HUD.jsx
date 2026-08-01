@@ -50,8 +50,8 @@ export default function HUD() {
       if (e.repeat) return;
       if (["ArrowUp", "w", "W"].includes(e.key)) setControls({ gas: true });
       if (["ArrowDown", "s", "S"].includes(e.key)) setControls({ brake: true });
-      if (["ArrowLeft", "a", "A"].includes(e.key)) setControls({ steer: -1 });
-      if (["ArrowRight", "d", "D"].includes(e.key)) setControls({ steer: 1 });
+      if (["ArrowLeft", "a", "A"].includes(e.key)) setControls({ steer: 1 });
+      if (["ArrowRight", "d", "D"].includes(e.key)) setControls({ steer: -1 });
       if (e.code === "Space") setControls({ boost: true });
       if (["f", "F"].includes(e.key)) setControls({ flip: true });
     };
@@ -89,8 +89,8 @@ export default function HUD() {
       {popups.map((p) => <div className="scorePopup" key={p.id}>{p.label}</div>)}
       <div className="scoreReadout">SCORE {score}</div>
       <div className="controls leftPad">
-        <button aria-label="Steer left" {...press({ steer: -1 })}>‹</button>
-        <button aria-label="Steer right" {...press({ steer: 1 })}>›</button>
+        <button aria-label="Steer left" {...press({ steer: 1 })}>‹</button>
+        <button aria-label="Steer right" {...press({ steer: -1 })}>›</button>
       </div>
       <div className="controls rightPad">
         <button className="gas" {...press({ gas: true })}>GAS</button>
